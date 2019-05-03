@@ -1,6 +1,6 @@
 # Overview
 
-`pixl-class` is a simple class builder utility, which adds support for specifying class member variables as well as mix-ins.  It does this by providing a custom API that augments an ES2015 class with custom features.
+`class-plus` is a simple class builder utility, which adds support for specifying class member variables as well as mix-ins.  It does this by providing a custom API that augments an ES2015 class with custom features.
 
 ## Why
 
