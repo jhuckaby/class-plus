@@ -9,7 +9,7 @@ Native JavaScript classes (introduced in ECMAScript 2015) are a welcome addition
 1. You cannot declare properties inside the class (you have to do it in the constructor, which I do not like).
 	- Yes, there is a [TC39 proposal](https://github.com/tc39/proposal-class-fields) for this, but it's not yet available to normal users.
 2. Classes can only inherit from one single parent class.
-	- I guess mix-ins are [technically possible](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Mix-ins), but the syntax is abhorrent in my opinion.
+	- I guess mix-ins are [technically possible](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Mix-ins), but the syntax is confusing in my opinion.
 
 I wrote the class-plus module to provide these features to ES2015 classes using a simple API, while offering some additional niceties.  The full set of features are:
 
