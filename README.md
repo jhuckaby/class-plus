@@ -168,7 +168,7 @@ If you were to change `Beer.types` later on, then *all* classes would see the ch
 
 ## Mix-ins
 
-While achieving mix-ins (essentially multiple inheritance) is technically [possible])https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Mix-ins) using ES2015 classes, the syntax leaves much to be desired.
+While achieving mix-ins (essentially multiple inheritance) is technically [possible](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Mix-ins) using ES2015 classes, the syntax leaves much to be desired.
 
 Using class-plus you can simply merge in one or more "mix-in" classes using the `__mixins` property.  This will import all the variables, methods and static members from the specified classes, excluding constructors.  Example:
 
