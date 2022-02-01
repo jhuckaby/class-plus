@@ -1,6 +1,6 @@
 {
   "name": "class-plus",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A simple module for building and extending classes, with mixins and more.",
   "author": "Joseph Huckaby <jhuckaby@gmail.com>",
   "homepage": "https://github.com/jhuckaby/class-plus",
@@ -20,7 +20,8 @@
     "oop",
     "class",
     "mixins",
-    "async"
+    "async",
+	"await"
   ],
   "dependencies": {},
   "devDependencies": {

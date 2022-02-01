@@ -337,11 +337,108 @@ Alternatively, you can set `__asyncify` to a [regular expression](https://develo
 
 Note that in order for your methods to be async-compatible, they must accept a callback as the final argument, and that callback must be called using the standard Node.js convention (i.e. `(err)` or `(err, result)`).  The error *must* be the first argument sent to the callback (or false/undefined on success), and a result, if any, must be the second argument.
 
+### Async Return Values
+
+If your callback is fired using the typical `(err, result)` arguments, such as this:
+
+```js
+const Soda = Class({
+	__asyncify: true
+},
+class Soda {
+	pour(callback) {
+		setTimeout( function() {
+			callback( null, "8oz" );
+		}, 250 );
+	}
+});
+```
+
+Then you can access the result using async in this way:
+
+```js
+let drink = new Soda();
+
+try {
+	let result = await drink.pour();
+	console.log(result);
+}
+catch (err) {
+	throw err;
+}
+```
+
+However, if your callback has *multiple result arguments*, like this:
+
+```js
+const Soda = Class({
+	__asyncify: true
+},
+class Soda {
+	pour(callback) {
+		setTimeout( function() {
+			callback( null, 8, "oz" );
+		}, 250 );
+	}
+});
+```
+
+They will be returned in an array which you can destruct like this:
+
+```js
+let drink = new Soda();
+
+try {
+	let [amount, units] = await drink.pour();
+	console.log(amount, units);
+}
+catch (err) {
+	throw err;
+}
+```
+
+Finally, for ultimate control over the async conversion, you can pre-declare the names of your callback arguments in the `__asyncify` property, by setting it to an object containing the function names as keys, and the argument names as array items.  Then, the result can be awaited as a destructed object with named keys.  Here is how to set this up in the class:
+
+```js
+const Soda = Class({
+	__asyncify: {
+		pour: ['amount', 'units'] // declare pour() callback arg names here
+	}
+},
+class Soda {
+	pour(callback) {
+		setTimeout( function() {
+			callback( null, 8, "oz" ); // fire callback as usual
+		}, 250 );
+	}
+});
+```
+
+And here is how to await it:
+
+```js
+let drink = new Soda();
+
+try {
+	let { amount, units } = await drink.pour();
+	console.log(amount, units);
+}
+catch (err) {
+	throw err;
+}
+```
+
+The idea here is that the calling code can select *which of the arguments it wants*.  For example, we can omit `units` and only fetch `amount`:
+
+```js
+let { amount } = await drink.pour();
+```
+
 # License
 
 **The MIT License**
 
-*Copyright (c) 2019 Joseph Huckaby*
+*Copyright (c) 2019 - 2022 Joseph Huckaby*
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

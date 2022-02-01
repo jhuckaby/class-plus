@@ -168,6 +168,123 @@ exports.tests = [
 		})();
 	},
 	
+	function asyncifyWithError(test) {
+		test.expect(2);
+		
+		var MyClass = Class({
+			__asyncify: true
+		}, 
+		class Foo {
+			foo() { return "bar"; }
+			
+			pour(callback) {
+				callback( new Error("frogs") );
+			}
+		});
+		var instance = new MyClass();
+		test.ok( instance.foo() === "bar", "Foo does not equal bar" );
+		
+		(async function() {
+			try {
+				var result = await instance.pour();
+			}
+			catch(err) {
+				test.ok( err.message === 'frogs', "Unexpected error message: " + err.message );
+			}
+			test.done();
+		})();
+	},
+	
+	function asyncifyWithSingleArg(test) {
+		var MyClass = Class({
+			__asyncify: true
+		}, 
+		class Foo {
+			foo() { return "bar"; }
+			
+			pour(callback) {
+				callback(null, "8oz");
+			}
+		});
+		var instance = new MyClass();
+		test.ok( instance.foo() === "bar", "Foo does not equal bar" );
+		
+		(async function() {
+			var result = await instance.pour();
+			test.ok( result === "8oz", "Unexpected result: " + result );
+			test.done();
+		})();
+	},
+	
+	function asyncifyWithMultiArgs(test) {
+		var MyClass = Class({
+			__asyncify: true
+		}, 
+		class Foo {
+			foo() { return "bar"; }
+			
+			pour(callback) {
+				callback(null, 8, "oz");
+			}
+		});
+		var instance = new MyClass();
+		test.ok( instance.foo() === "bar", "Foo does not equal bar" );
+		
+		(async function() {
+			var [amount, units] = await instance.pour();
+			test.ok( amount === 8, "Unexpected amount: " + amount );
+			test.ok( units === "oz", "Unexpected units: " + units );
+			test.done();
+		})();
+	},
+	
+	function asyncifyWithNamedArgs(test) {
+		var MyClass = Class({
+			__asyncify: {
+				pour: ['amount', 'units']
+			}
+		}, 
+		class Foo {
+			foo() { return "bar"; }
+			
+			pour(callback) {
+				callback(null, 8, "oz");
+			}
+		});
+		var instance = new MyClass();
+		test.ok( instance.foo() === "bar", "Foo does not equal bar" );
+		
+		(async function() {
+			var {amount, units} = await instance.pour();
+			test.ok( amount === 8, "Unexpected amount: " + amount );
+			test.ok( units === "oz", "Unexpected units: " + units );
+			test.done();
+		})();
+	},
+	
+	function asyncifyWithNamedArgsSelective(test) {
+		var MyClass = Class({
+			__asyncify: {
+				pour: ['amount', 'units']
+			}
+		}, 
+		class Foo {
+			foo() { return "bar"; }
+			
+			pour(callback) {
+				callback(null, 8, "oz");
+			}
+		});
+		var instance = new MyClass();
+		test.ok( instance.foo() === "bar", "Foo does not equal bar" );
+		
+		(async function() {
+			var {amount} = await instance.pour();
+			test.ok( amount === 8, "Unexpected amount: " + amount );
+			test.done();
+		})();
+	},
+	
 	function asyncHooks(test) {
 		var MyClass = Class({
 			__asyncify: true,

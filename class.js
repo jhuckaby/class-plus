@@ -1,9 +1,8 @@
 // Simple class builder utility
-// Copyright (c) 2019 Joseph Huckaby
+// Copyright (c) 2019 - 2022 Joseph Huckaby
 // Released under the MIT License
 
 var events = require("events");
-var util = require("util");
 
 class HookHelper {
 	registerHook(name, handler) {
@@ -66,6 +65,34 @@ class HookHelper {
 	}
 } // HookHelper
 
+const asyncify = function(origFunc, argNames) {
+	// asyncify a class method
+	// resolution will be array of callback arguments (err, results, etc.)
+	// also supports classic callback calling convention
+	return async function(...args) {
+		var self = this;
+		
+		// sniff for classic callback style
+		if (typeof(args[ args.length - 1 ]) == 'function') return origFunc.call(self, ...args);
+		
+		// promise/async style
+		return new Promise( (resolve, reject) => {
+			origFunc.call(self, ...args, function(...results) {
+				let err = results.shift();
+				if (err) reject(err);
+				else if (argNames) {
+					var resultsObj = {};
+					argNames.forEach( function(name, idx) {
+						resultsObj[name] = results[idx];
+					} );
+					resolve( resultsObj );
+				}
+				else resolve( (results.length > 1) ? results : results[0] );
+			});
+		});
+	};
+};
+
 module.exports = function Class(args, obj) {
 	// class builder
 	var proto = obj.prototype;
@@ -79,34 +106,45 @@ module.exports = function Class(args, obj) {
 	
 	// optional asyncify
 	if (args.__asyncify) {
-		if ((typeof(args.__asyncify) == 'object') && args.__asyncify.length) {
-			// specific set of methods to asyncify
-			args.__asyncify.forEach( function(key) {
-				if (proto[key] && !proto[key].__async && (proto[key].constructor.name !== "AsyncFunction")) {
-					proto[key] = util.promisify( proto[key] );
-					proto[key].__async = true;
+		if (typeof(args.__asyncify) == 'object') {
+			if (Array.isArray(args.__asyncify)) {
+				// specific set of methods to asyncify
+				args.__asyncify.forEach( function(key) {
+					if (proto[key] && !proto[key].__async && (proto[key].constructor.name !== "AsyncFunction")) {
+						proto[key] = asyncify( proto[key] );
+						proto[key].__async = true;
+					}
+				} );
+			}
+			else if (args.__asyncify instanceof RegExp) {
+				// regular expression to match against method names
+				Object.getOwnPropertyNames(proto).forEach( function(key) { 
+					if (!key.match(/^(__name|constructor|prototype)$/) && (typeof(proto[key]) == 'function') && key.match(args.__asyncify) && !proto[key].__async && (proto[key].constructor.name !== "AsyncFunction")) { 
+						proto[key] = asyncify( proto[key] ); 
+						proto[key].__async = true;
+					} 
+				}); 
+			}
+			else {
+				// hash to define callback arg names for each async func
+				for (var key in args.__asyncify) {
+					if (proto[key] && !proto[key].__async && (proto[key].constructor.name !== "AsyncFunction")) {
+						proto[key] = asyncify( proto[key], args.__asyncify[key] );
+						proto[key].__async = true;
+					}
 				}
-			} );
-		}
-		else if ((typeof(args.__asyncify) == 'object') && args.__asyncify.match) {
-			// regular expression to match against method names
-			Object.getOwnPropertyNames(proto).forEach( function(key) { 
-				if (!key.match(/^(__name|constructor|prototype)$/) && (typeof(proto[key]) == 'function') && key.match(args.__asyncify) && !proto[key].__async && (proto[key].constructor.name !== "AsyncFunction")) { 
-					proto[key] = util.promisify( proto[key] ); 
-					proto[key].__async = true;
-				} 
-			}); 
-		}
+			}
+		} // is object
 		else {
 			// try to sniff out callback based methods using reflection
 			Object.getOwnPropertyNames(proto).forEach( function(key) { 
 				if (!key.match(/^(__name|constructor|prototype)$/) && (typeof(proto[key]) == 'function') && (proto[key].toString().match(/^\s*\S+\s*\([^\)]*(callback|cb)\s*\)\s*\{/)) && !proto[key].__async && (proto[key].constructor.name !== "AsyncFunction")) { 
-					proto[key] = util.promisify( proto[key] ); 
+					proto[key] = asyncify( proto[key] ); 
 					proto[key].__async = true;
 				} 
 			}); 
 		}
-	}
+	} // __asyncify
 	
 	// merge in mixins
 	var mixins = args.__mixins || [];
@@ -135,7 +173,7 @@ module.exports = function Class(args, obj) {
 	
 	// asyncify fireHook if applicable
 	if (args.__hooks && !proto.fireHook.__async) {
-		proto.fireHook = util.promisify( proto.fireHook );
+		proto.fireHook = asyncify( proto.fireHook );
 		proto.fireHook.__async = true;
 	}
 	
